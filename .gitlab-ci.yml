@@ -27,7 +27,7 @@ build:
       - dist/
     expire_in: 1 hour
   only:
-    - main
+    - master
     - merge_requests
     - tags
 
@@ -41,7 +41,7 @@ lint:
     - npm run lint || true
   allow_failure: true
   only:
-    - main
+    - master
     - merge_requests
 
 # Update keys job (scheduled)
