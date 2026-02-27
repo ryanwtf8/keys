@@ -6,14 +6,12 @@ stages:
 variables:
   NODE_VERSION: "18"
 
-# Cache node_modules for faster builds
 cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
     - node_modules/
     - .npm/
 
-# Build stage
 build:
   stage: build
   image: node:${NODE_VERSION}
@@ -31,7 +29,6 @@ build:
     - merge_requests
     - tags
 
-# Lint stage (optional)
 lint:
   stage: test
   image: node:${NODE_VERSION}
@@ -44,7 +41,6 @@ lint:
     - master
     - merge_requests
 
-# Update keys job (scheduled)
 update_keys:
   stage: deploy
   image: node:${NODE_VERSION}
@@ -53,38 +49,98 @@ update_keys:
     - npm ci --cache .npm --prefer-offline
     - echo "Building project..."
     - npm run build
-    - echo "Running key update script..."
+    - echo "Running key extraction with 4 API keys..."
     - npm run update
+    - echo "Listing extracted keys..."
+    - ls -lh *.txt 2>/dev/null || echo "No key files found"
+    - |
+      echo "=== Extracted Keys Summary ==="
+      for file in megacloud_v2.txt megacloud_v3.txt cloudvidz_v2.txt cloudvidz_v3.txt; do
+        if [ -f "$file" ]; then
+          echo "✅ $file: $(wc -c < $file) bytes"
+        else
+          echo "❌ $file: NOT FOUND"
+        fi
+      done
     - echo "Committing updated keys..."
-    - git config --global user.name "gitlab-ci"
-    - git config --global user.email "gitlab-ci@gitlab.com"
-    - git add key.txt rabbit.txt
+    - git config --global user.name "ryanwtf88"
+    - git config --global user.email "ryanwtf88@gmail.com"
+    - git add *.txt || true
     - git diff --staged --quiet || git commit -m "Automated update of keys [skip ci]"
-    - git push https://oauth2:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
+    - git push https://oauth2:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME} || echo "Nothing to push"
   environment:
     name: production
   variables:
-    API_KEY: ${API_KEY}
+    API_KEY: "AIzaSyDgGHHZk6qXzuJSj7_CKqXia08TzH9P5XQ,AIzaSyAYtCleFCNQzoU8ldxrIM065SKYvPC8Qik,AIzaSyA93b1xbxWgFx78ErgNejC9YXXGK6TDFg4,AIzaSyDGWwlzZ50YAr2T7b3K_X1Lpp_qUXUUqjI,AIzaSyCoxYWilZ7JZFD4KSRCHyONgTJhCGT1k_E,AIzaSyBSl3Gkc6fWmUbseSXPtpBZgI95bG_dmWU,AIzaSyBS8Msm63hrGHQ4D56dqFWhSVHnlRCMG7Q,AIzaSyBhtNswYirB0DUGT2LHleONcqLs6OJtdHU,AIzaSyCPBKz7cRqXsDrG_YKS571O3K12UvlWllc,AIzaSyB76T4TKmTxvRUDjXG01GJMo4CRTB18_6o,AIzaSyAN6vgelTVW-y10u26fFKpMUPHcN7k6v2g,AIzaSyACo1jozz1oQsKGU9eWbM5sfv5Z2Hk2oDM,AIzaSyA5CxtN3NhP4DU1IWkMb0NaJbxL_QHIZK0,AIzaSyAijY23_MRz1dWCV1bh_kEPbrTV3NLrHZ4"
+  artifacts:
+    paths:
+      - "*.txt"
+    expire_in: 7 days
   only:
     - schedules
     - web
   when: manual
 
-# Manual trigger for key updates
 manual_update:
   stage: deploy
   image: node:${NODE_VERSION}
   script:
     - npm ci --cache .npm --prefer-offline
     - npm run build
+    - echo "Extracting keys with 4 API keys..."
     - npm run update
+    - |
+      echo "=== Results ==="
+      for file in megacloud_v2.txt megacloud_v3.txt cloudvidz_v2.txt cloudvidz_v3.txt; do
+        if [ -f "$file" ]; then
+          echo "✅ $file: $(cat $file)"
+        else
+          echo "❌ $file: FAILED"
+        fi
+      done
   artifacts:
     paths:
-      - key.txt
-      - rabbit.txt
+      - "*.txt"
     expire_in: 1 day
   variables:
-    API_KEY: ${API_KEY}
+    API_KEY: "AIzaSyDgGHHZk6qXzuJSj7_CKqXia08TzH9P5XQ,AIzaSyAYtCleFCNQzoU8ldxrIM065SKYvPC8Qik,AIzaSyA93b1xbxWgFx78ErgNejC9YXXGK6TDFg4,AIzaSyDGWwlzZ50YAr2T7b3K_X1Lpp_qUXUUqjI,AIzaSyCoxYWilZ7JZFD4KSRCHyONgTJhCGT1k_E,AIzaSyBSl3Gkc6fWmUbseSXPtpBZgI95bG_dmWU,AIzaSyBS8Msm63hrGHQ4D56dqFWhSVHnlRCMG7Q,AIzaSyBhtNswYirB0DUGT2LHleONcqLs6OJtdHU,AIzaSyCPBKz7cRqXsDrG_YKS571O3K12UvlWllc,AIzaSyB76T4TKmTxvRUDjXG01GJMo4CRTB18_6o,AIzaSyAN6vgelTVW-y10u26fFKpMUPHcN7k6v2g,AIzaSyACo1jozz1oQsKGU9eWbM5sfv5Z2Hk2oDM,AIzaSyA5CxtN3NhP4DU1IWkMb0NaJbxL_QHIZK0,AIzaSyAijY23_MRz1dWCV1bh_kEPbrTV3NLrHZ4"
   only:
     - web
   when: manual
+
+test_extraction:
+  stage: test
+  image: node:${NODE_VERSION}
+  needs:
+    - build
+  script:
+    - echo "Testing key extraction with 4 API keys..."
+    - npm run update
+    - |
+      echo "=== Verification ==="
+      success=0
+      total=4
+      for file in megacloud_v2.txt megacloud_v3.txt cloudvidz_v2.txt cloudvidz_v3.txt; do
+        if [ -f "$file" ] && [ -s "$file" ]; then
+          echo "✅ $file: PASS ($(wc -c < $file) bytes)"
+          success=$((success + 1))
+        else
+          echo "❌ $file: FAIL"
+        fi
+      done
+      echo ""
+      echo "Success rate: $success/$total"
+      if [ $success -lt 2 ]; then
+        echo "⚠️ Less than 50% success - check API keys"
+        exit 1
+      fi
+  variables:
+    API_KEY: "AIzaSyDgGHHZk6qXzuJSj7_CKqXia08TzH9P5XQ,AIzaSyAYtCleFCNQzoU8ldxrIM065SKYvPC8Qik,AIzaSyA93b1xbxWgFx78ErgNejC9YXXGK6TDFg4,AIzaSyDGWwlzZ50YAr2T7b3K_X1Lpp_qUXUUqjI,AIzaSyCoxYWilZ7JZFD4KSRCHyONgTJhCGT1k_E,AIzaSyBSl3Gkc6fWmUbseSXPtpBZgI95bG_dmWU,AIzaSyBS8Msm63hrGHQ4D56dqFWhSVHnlRCMG7Q,AIzaSyBhtNswYirB0DUGT2LHleONcqLs6OJtdHU,AIzaSyCPBKz7cRqXsDrG_YKS571O3K12UvlWllc,AIzaSyB76T4TKmTxvRUDjXG01GJMo4CRTB18_6o,AIzaSyAN6vgelTVW-y10u26fFKpMUPHcN7k6v2g,AIzaSyACo1jozz1oQsKGU9eWbM5sfv5Z2Hk2oDM,AIzaSyA5CxtN3NhP4DU1IWkMb0NaJbxL_QHIZK0,AIzaSyAijY23_MRz1dWCV1bh_kEPbrTV3NLrHZ4"
+  artifacts:
+    paths:
+      - "*.txt"
+    expire_in: 1 day
+  only:
+    - master
+    - merge_requests
+  allow_failure: true
