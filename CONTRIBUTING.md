@@ -1,4 +1,4 @@
-# Contributing to MegaCloud Keys
+# Contributing to Keys
 
 Thank you for your interest in contributing!
 

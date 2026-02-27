@@ -1,8 +1,9 @@
 import * as t from "@babel/types";
-import generate from "@babel/generator";
+import babelGenerate from "@babel/generator";
 
 const gen = (node: any) => {
-  return generate(node, { compact: true }).code;
+  const generator = (babelGenerate as any).default || babelGenerate;
+  return generator(node, { compact: true }).code;
 };
 
 function evaluateAstNode(node: any, args: any[]): any {
@@ -176,7 +177,7 @@ export const solveStateMachine = {
           calculatorName,
           logicMap,
         };
-        console.log(`\n[STATE-MACHINE] State Machine fully parsed!`);
+        console.log(`\n[STATE-MACHINE] State Machine parsed!`);
         console.log(`   - Object Name: '${state.stateMachineInfo.objectName}'`);
         console.log(`   - Setter Fn:   '${setterName}'`);
         console.log(`   - Calculator Fn: '${calculatorName}'`);

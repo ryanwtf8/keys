@@ -1,7 +1,7 @@
 {
-  "name": "megacloud-keys",
+  "name": "keys",
   "version": "1.0.0",
-  "description": "E1 Player Deobfuscator - TypeScript",
+  "description": "Player Deobfuscator - TypeScript",
   "type": "module",
   "main": "dist/deobfuscate.js",
   "scripts": {
@@ -13,7 +13,7 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
-  "keywords": ["deobfuscator", "megacloud", "typescript"],
+  "keywords": ["deobfuscator", "keys", "typescript"],
   "author": "RY4N",
   "license": "MIT",
   "dependencies": {

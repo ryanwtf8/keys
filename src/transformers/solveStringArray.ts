@@ -1,5 +1,7 @@
 import * as t from '@babel/types';
-import generate from '@babel/generator';
+import babelGenerate from '@babel/generator';
+
+const generate = (babelGenerate as any).default || babelGenerate;
 
 let largeStringInfo: any = null;
 let decoderInfo: any = null;

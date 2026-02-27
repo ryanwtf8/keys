@@ -7,6 +7,7 @@ import { inlineWrapperFunctions } from './transformers/inlineProxiedFunctions.js
 import { solveStringArray } from './transformers/solveStringArray.js';
 import { solveStateMachine } from './transformers/solveStateMachine.js';
 import { inlineStringArray } from './transformers/inlineStringArray.js';
+import { resolveMappings } from './transformers/resolveMappings.js';
 
 try {
     let intermediateCode: string;
@@ -40,7 +41,7 @@ try {
     fs.writeFileSync('output.js', intermediateCode, 'utf-8');
     console.log("Pass 2 complete.")
 
-    console.log("--- Starting Pass 3: Solving String Array and Solving State Machine ---")
+    console.log("--- Starting Pass 3: Solving String Array and State Machine ---");
     const transformStringArray = babel.transformSync(intermediateCode, {
         sourceType: "script",
         plugins: [solveStringArray, solveStateMachine],
@@ -67,6 +68,20 @@ try {
     intermediateCode = inlineStringArr.code;
     fs.writeFileSync('output.js', intermediateCode, 'utf-8');
     console.log("Pass 4 complete.")
+
+    console.log("--- Starting Pass 5: Resolving Function Mappings ---");
+    const resolveMappingsResult = babel.transformSync(intermediateCode, {
+        sourceType: "script",
+        plugins: [resolveMappings],
+        code: true
+    });
+
+    if (!resolveMappingsResult || !resolveMappingsResult.code) {
+        throw new Error("Pass 5 (Resolving Mappings) failed to produce code.");
+    }
+    intermediateCode = resolveMappingsResult.code;
+    fs.writeFileSync('output.js', intermediateCode, 'utf-8');
+    console.log("Pass 5 complete.")
 } catch (err) {
     console.error("\nAn error occurred during deobfuscation:", err);
 }
